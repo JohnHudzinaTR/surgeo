@@ -73,6 +73,8 @@ class SurgeoModel(BaseModel):
         self.geo_level = geo_level.upper()
         if geo_level == "TRACT":
             self._PROB_GEO_GIVEN_RACE = self._get_prob_tract_given_race()
+        elif geo_level == "FIPSCC":
+            self._PROB_GEO_GIVEN_RACE = self._get_prob_fipscc_given_race()
         else:
             self._PROB_GEO_GIVEN_RACE = self._get_prob_zcta_given_race()
         self._PROB_RACE_GIVEN_SURNAME = self._get_prob_race_given_surname()
@@ -139,6 +141,12 @@ class SurgeoModel(BaseModel):
             surgeo_data = pd.concat([geo_probs, 
                 sur_probs['name'].to_frame()
             ], axis=1)
+        elif self.geo_level == 'FIPSCC':
+            surgeo_data = pd.concat([
+                geo_probs['fips_cc'].to_frame(),
+                sur_probs['name'].to_frame(),
+                surgeo_probs
+            ], axis=1)
         else:
             surgeo_data = pd.concat([
                 geo_probs['zcta5'].to_frame(),
@@ -186,6 +194,18 @@ class SurgeoModel(BaseModel):
             geocode_probs = normalized_tracts.merge(
                 self._PROB_GEO_GIVEN_RACE,
                 left_on=['state','county','tract'],
+                right_index=True,
+                how='left',
+            )
+        elif self.geo_level == 'FIPSCC':
+            normalized_fipscc = (
+                self._normalize_fipscc(geo_df)
+                    .to_frame()
+            )
+            # Merge names to dataframe, which gives probs for each name.
+            geocode_probs = normalized_fipscc.merge(
+                self._PROB_GEO_GIVEN_RACE,
+                left_on='fips_cc',
                 right_index=True,
                 how='left',
             )

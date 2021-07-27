@@ -68,6 +68,22 @@ class BaseModel(object):
                                 .str.zfill(5)
         )
         return prob_race_given_zcta
+
+
+    def _get_prob_race_given_fips(self):
+        """Create dataframe of race probs given FIPS County Code (for Geo)"""
+        prob_race_given_fips = pd.read_csv(
+            self._package_root / 'data' / 'prob_race_given_fipscc_2010.csv',
+            index_col='fips_cc',
+            na_values=[''],
+            keep_default_na=False,
+        )
+        # Convert geocode zip codes to 00000-formatted strings
+        prob_race_given_fips.index = (
+            prob_race_given_fips.index.astype('str')
+                                .str.zfill(5)
+        )
+        return prob_race_given_fips
         
     def _get_prob_race_given_tract(self):
         prob_race_given_tract = pd.read_csv(
@@ -101,6 +117,22 @@ class BaseModel(object):
                                 .str.zfill(5)
         )
         return prob_zcta_given_race
+
+    
+    def _get_prob_fipscc_given_race(self):
+        """Create dataframe of County Code ratios given a race (for SurGeo)"""
+        prob_fipscc_given_race = pd.read_csv(
+            self._package_root / 'data' / 'prob_fipscc_given_race_2010.csv',
+            index_col='fips_cc',
+            na_values=[''],
+            keep_default_na=False,
+        )
+        # Convert geocode fips codes to 00000-formatted strings
+        prob_fipscc_given_race.index = (
+            prob_fipscc_given_race.index.astype('str')
+                                .str.zfill(5)
+        )
+        return prob_fipscc_given_race
 
     def _get_prob_race_given_surname(self):
         """Create dataframe of race probabilities given surnames (for Sur)"""
@@ -163,6 +195,13 @@ class BaseModel(object):
         converted = pd.Series(zcta.values, dtype=str).str.strip()
         zfilled = converted.str.zfill(5)
         zfilled.name = 'zcta5'
+        return zfilled
+
+    def _normalize_fipscc(self, fips_cc: pd.Series) -> pd.Series:
+        """Transform FIPS_CC into standardized strings"""
+        converted = pd.Series(fips_cc.values, dtype=str).str.strip()
+        zfilled = converted.str.zfill(5)
+        zfilled.name = 'fips_cc'
         return zfilled
 
     def _normalize_tracts(self, geo_target_df: pd.DataFrame) -> pd.DataFrame:
